@@ -5,28 +5,8 @@ from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabaz_score, silhouette_samples
 
 def run(
-    list_of_anomaly,
+    anomaly_group_by_state,
 ):
-    anomaly_group_by_state = {}
-    for i in list_of_anomaly:
-        state_no = i['state_no']
-        if state_no not in anomaly_group_by_state:
-            anomaly_group_by_state[state_no] = {
-                'list_of_mat':[],
-                'mat_owners':[],
-            }
-            
-        anomaly_group_by_state[state_no]['list_of_mat'].append(i['data_matrix'])
-        anomaly_group_by_state[state_no]['mat_owners'].append(i['anomaly_id'])
-
-    for state_no in anomaly_group_by_state:
-        lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
-        min_len = min(lengths)
-        anomaly_group_by_state[state_no]['list_of_mat'] = [\
-            i[:min_len] for i in \
-            anomaly_group_by_state[state_no]['list_of_mat']\
-        ]
-        lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
 
     for state_no in anomaly_group_by_state:
         print '-'*20

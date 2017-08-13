@@ -22,6 +22,21 @@ def inform_config(config):
 
 def build_parser():
     parser = OptionParser()
+
+    parser.add_option(
+        "--cluster",
+        action="store_true", 
+        dest="cluster",
+        default = False,
+        help="True if you want to cluster.")
+
+    parser.add_option(
+        "--visualizedata",
+        action="store_true", 
+        dest="visualizedata",
+        default = False,
+        help="True if you want to visualizedata.")
+
     return parser
 
 if __name__ == "__main__":
@@ -30,12 +45,20 @@ if __name__ == "__main__":
     inform_config(config)
 
     import load_anomaly_data
-    list_of_anomaly = load_anomaly_data.run(
+    anomaly_group_by_state = load_anomaly_data.run(
         config.anomaly_data_path,
         config.interested_data_fields,
     )
-    if config.cluster_algorithm['name'] == 'kmeans':
-        import cluster_by_kmeans
-        cluster_by_kmeans.run(
-            list_of_anomaly,
+    if options.cluster:
+        if config.cluster_algorithm['name'] == 'kmeans':
+            import cluster_by_kmeans
+            cluster_by_kmeans.run(
+                anomaly_group_by_state,
+            )
+
+    if options.visualizedata:
+        import visualize_anomaly_by_state
+        visualize_anomaly_by_state.run(
+            anomaly_group_by_state,
+            config.interested_data_fields,
         )
