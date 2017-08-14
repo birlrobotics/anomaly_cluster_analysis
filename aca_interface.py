@@ -30,13 +30,6 @@ def build_parser():
         default = False,
         help="True if you want to cluster.")
 
-    parser.add_option(
-        "--visualizedata",
-        action="store_true", 
-        dest="visualizedata",
-        default = False,
-        help="True if you want to visualizedata.")
-
     return parser
 
 if __name__ == "__main__":
@@ -54,11 +47,5 @@ if __name__ == "__main__":
             import cluster_by_kmeans
             cluster_by_kmeans.run(
                 anomaly_group_by_state,
+                config.interested_data_fields,
             )
-
-    if options.visualizedata:
-        import visualize_anomaly_by_state
-        visualize_anomaly_by_state.run(
-            anomaly_group_by_state,
-            config.interested_data_fields,
-        )

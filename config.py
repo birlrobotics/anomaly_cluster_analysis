@@ -9,7 +9,7 @@ data_type_options = [
 from data_fields_config_store import data_fields_store
 
 config_by_user = {
-    'data_type_chosen': data_type_options[1:],
+    'data_type_chosen': data_type_options[:],
     'cluster_algorithm': {
         'name': 'kmeans',
         'parameters': {
