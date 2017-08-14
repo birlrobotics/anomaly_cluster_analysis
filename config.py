@@ -8,14 +8,24 @@ data_type_options = [
 ]
 from data_fields_config_store import data_fields_store
 
-config_by_user = {
-    'data_type_chosen': data_type_options[:],
-    'cluster_algorithm': {
+cluster_algorithm_options = [
+    {
         'name': 'kmeans',
         'parameters': {
 
         }
     },
+    {
+        'name': 'gmm',
+        'parameters': {
+
+        }
+    },
+]
+
+config_by_user = {
+    'data_type_chosen': data_type_options[1:],
+    'cluster_algorithm': cluster_algorithm_options[1], 
     'data_folder_path': '/home/vmrguser/Files_from_Shuangqi_to_Workstation/birl/data_for_or_from_HMM/ML_DATA_Shuangqi/REAL_BAXTER_PICK_N_PLACE_with_5_states_20170711',
 }
 

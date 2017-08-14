@@ -6,13 +6,63 @@ from sklearn.metrics import silhouette_score, calinski_harabaz_score, silhouette
 from sklearn import preprocessing
 import ipdb
 from matplotlib.pyplot import cm 
-import util
+import matplotlib.mlab as mlab
+
+
+def project_to_gaussian_basis_space(mat):
+    num_basis=31
+    sigma = 0.05 
+    means = np.arange(0,num_basis)/(num_basis-1.0)
+
+
+    fig = plt.figure()
+    ax_basis = fig.add_subplot(311)
+    for i in range(num_basis):
+        mu = means[i]  
+        x = np.linspace(0, 1, 100)
+        ax_basis.plot(x, mlab.normpdf(x, mu, sigma))
+
+    len_data = mat.shape[0]
+    x = np.linspace(0.0, 1.0, len_data)     # the time stamp
+    Phi = np.exp(\
+        -.5*(\
+            np.array(\
+                map(\
+                    lambda arg: arg-means,\
+                    np.tile(x, (num_basis, 1)).T\
+                )\
+            ).T**2 \
+        / (sigma**2))\
+    )
+
+    
+    ax_before = fig.add_subplot(312)
+    ax_after = fig.add_subplot(313)
+    new_mat = []
+    for col_no in range(mat.shape[1]):
+        ax_before.plot(
+            np.linspace(0, 1, mat.shape[0]),     
+            mat[:, col_no].reshape(1, -1).tolist()[0],
+        )
+        W = np.dot(np.linalg.inv(np.dot(Phi, Phi.T)), np.dot(Phi, mat[:, col_no]))
+        approximated_y = np.dot(W, Phi)
+        ax_after.plot(
+            np.linspace(0, 1, mat.shape[0]),     
+            approximated_y,
+        )
+
+        new_mat.append(approximated_y)
+    new_mat = np.matrix(new_mat).T
+
+    fig.show()
+    raw_input()
+
+    return new_mat
 
 def run(
     anomaly_group_by_state,
     interested_data_fields,
 ):
-    anomaly_group_by_state = util.make_state_data_same_length(anomaly_group_by_state)
 
     min_max_scaler = preprocessing.MinMaxScaler(feature_range=(-1, 1))
 
@@ -55,8 +105,18 @@ def run(
                     color=dim_color[col_no],
                 )
             ax_raw_data.axvline(x=idx, color='gray')
+
+
+            projected_mat = project_to_gaussian_basis_space(mat.copy())
+
+
+
+
         lgd = ax_raw_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
         bbox_extra_artists.append(lgd)
+
+
+
 
 
 
