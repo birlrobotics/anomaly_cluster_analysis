@@ -1,12 +1,11 @@
 import numpy as np
 import ipdb
 import matplotlib.pyplot as plt
-from sklearn.cluster import KMeans
-from sklearn.metrics import silhouette_score, calinski_harabaz_score, silhouette_samples
-from sklearn import preprocessing
+from sklearn import preprocessing, mixture
 import ipdb
 from matplotlib.pyplot import cm 
 import matplotlib.mlab as mlab
+import util
 
 
 def project_to_gaussian_basis_space(mat):
@@ -23,6 +22,7 @@ def project_to_gaussian_basis_space(mat):
         ax_basis.plot(x, mlab.normpdf(x, mu, sigma))
 
     len_data = mat.shape[0]
+    dim_amount = mat.shape[1]
     x = np.linspace(0.0, 1.0, len_data)     # the time stamp
     Phi = np.exp(\
         -.5*(\
@@ -37,27 +37,27 @@ def project_to_gaussian_basis_space(mat):
 
     
     ax_before = fig.add_subplot(312)
+    ax_before.set_ylim((-1, 1))
     ax_after = fig.add_subplot(313)
-    new_mat = []
-    for col_no in range(mat.shape[1]):
+    ax_after.set_ylim((-1, 1))
+    projected_mat = np.zeros([num_basis, dim_amount])
+    for col_no in range(dim_amount):
         ax_before.plot(
-            np.linspace(0, 1, mat.shape[0]),     
+            np.linspace(0, 1, len_data),     
             mat[:, col_no].reshape(1, -1).tolist()[0],
         )
         W = np.dot(np.linalg.inv(np.dot(Phi, Phi.T)), np.dot(Phi, mat[:, col_no]))
         approximated_y = np.dot(W, Phi)
         ax_after.plot(
-            np.linspace(0, 1, mat.shape[0]),     
+            np.linspace(0, 1, len_data),     
             approximated_y,
         )
 
-        new_mat.append(approximated_y)
-    new_mat = np.matrix(new_mat).T
+        mat[:, col_no] = approximated_y
+        projected_mat[:, col_no] = W
 
-    fig.show()
-    raw_input()
-
-    return new_mat
+    plt.close(fig)
+    return mat, projected_mat 
 
 def run(
     anomaly_group_by_state,
@@ -68,18 +68,22 @@ def run(
 
     for state_no in anomaly_group_by_state:
 
-        sample_length = anomaly_group_by_state[state_no]['list_of_mat'][0].shape[0]
+        lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
 
 
 
         for col_no in range(big_mat.shape[1]):
-            vec = big_mat[:, col_no].reshape(1, -1).tolist()[0]
-            big_mat[:, col_no] = min_max_scaler.fit_transform(vec)
+            vec = big_mat[:, col_no].reshape(-1, 1)
+            big_mat[:, col_no] = min_max_scaler.fit_transform(vec).reshape(1, -1)
+
 
         fig = plt.figure()
         bbox_extra_artists = []
-        ax_raw_data = fig.add_subplot(211)
+        ax_raw_data = fig.add_subplot(311)
+        ax_raw_data.set_ylim((-1, 1))
+        ax_approximated_data = fig.add_subplot(312)
+        ax_approximated_data.set_ylim((-1, 1))
 
 
         dim_color = {}
@@ -89,54 +93,60 @@ def run(
             dim_color[dim_no] = color.next()
 
         X = []
-        for idx in range(0, big_mat.shape[0], sample_length):
-            mat = big_mat[idx:idx+sample_length]
-            X.append(mat.flatten().tolist())
+        for idx, i, j in util.iter_from_X_lengths(big_mat, lengths):
+            mat = big_mat[i:j]
 
-            for col_no in range(mat.shape[1]):
+            for col_no in range(dim_amount):
                 if idx == 0:
                     label = interested_data_fields[col_no]
                 else:
                     label = None
+
                 ax_raw_data.plot(
-                    range(idx, idx+sample_length),
+                    range(i, j),
                     mat[:, col_no].reshape(1, -1).tolist()[0],
                     label=label,
                     color=dim_color[col_no],
                 )
-            ax_raw_data.axvline(x=idx, color='gray')
+            ax_raw_data.axvline(x=i, color='gray')
 
+            approximated_mat, projected_mat = project_to_gaussian_basis_space(mat.copy())
 
-            projected_mat = project_to_gaussian_basis_space(mat.copy())
+            for col_no in range(dim_amount):
+                if idx == 0:
+                    label = interested_data_fields[col_no]
+                else:
+                    label = None
 
+                ax_approximated_data.plot(
+                    range(i, j),
+                    approximated_mat[:, col_no].reshape(1, -1).tolist()[0],
+                    label=label,
+                    color=dim_color[col_no],
+                )
+            ax_approximated_data.axvline(x=i, color='gray')
 
-
-
+            X.append(projected_mat.flatten().tolist())
         lgd = ax_raw_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
+        bbox_extra_artists.append(lgd)
+        lgd = ax_approximated_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
         bbox_extra_artists.append(lgd)
 
 
+        bic_x = []
+        bic_y = []
 
-
-
-
-        silhouette_x = []
-        silhouette_y = []
         X = np.matrix(X)
-        for n_clusters in range(2, X.shape[0]):
-            kmeans = KMeans(
-                n_clusters=n_clusters, 
-                verbose=1,
-                n_jobs=-2).fit(X)
+        sample_amount = X.shape[0]
+        for n_components in range(1, sample_amount+1):
+            gmm = mixture.GaussianMixture(n_components=n_components,
+                                      covariance_type='full').fit(X)
+            bic_x.append(n_components)
+            bic_y.append(gmm.bic(X))
 
-            metric_silhouette = silhouette_samples(X, kmeans.labels_)
-            silhouette_x.append(n_clusters)
-            silhouette_y.append(metric_silhouette)
-        ax_silhouette = fig.add_subplot(212)
-        ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)
-        silhouette_mean = [np.array(i).mean() for i in silhouette_y]
-        ax_silhouette.plot(silhouette_x, silhouette_mean, 'rs')
-        ax_silhouette.set_title("state %s"%(state_no,))
+        ax_bic = fig.add_subplot(313)
+        ax_bic.bar(bic_x, bic_y)
+        ax_bic.set_title("state %s"%(state_no,))
 
     plt.show()
 
