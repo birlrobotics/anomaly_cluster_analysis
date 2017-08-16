@@ -24,7 +24,15 @@ cluster_algorithm_options = [
 ]
 
 config_by_user = {
-    'data_type_chosen': data_type_options[1:],
+    'data_type_chosen': data_type_options[:],
+    'data_preprocessing_config': {
+        'global_scaler': {
+            'turn_on': True,
+            'parameters': {
+                'feature_range': [-1, 1],
+            },
+        },
+    },
     'cluster_algorithm': cluster_algorithm_options[1], 
     'data_folder_path': '/home/vmrguser/Files_from_Shuangqi_to_Workstation/birl/data_for_or_from_HMM/ML_DATA_Shuangqi/REAL_BAXTER_PICK_N_PLACE_with_5_states_20170711',
 }

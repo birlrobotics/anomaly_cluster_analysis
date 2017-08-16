@@ -3,7 +3,6 @@ import ipdb
 import matplotlib.pyplot as plt
 from sklearn.cluster import KMeans
 from sklearn.metrics import silhouette_score, calinski_harabaz_score, silhouette_samples
-from sklearn import preprocessing
 import ipdb
 from matplotlib.pyplot import cm 
 import util
@@ -14,8 +13,6 @@ def run(
 ):
     anomaly_group_by_state = util.make_state_data_same_length(anomaly_group_by_state)
 
-    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(-1, 1))
-
     for state_no in anomaly_group_by_state:
 
         sample_length = anomaly_group_by_state[state_no]['list_of_mat'][0].shape[0]
@@ -23,9 +20,6 @@ def run(
 
 
 
-        for col_no in range(big_mat.shape[1]):
-            vec = big_mat[:, col_no].reshape(1, -1).tolist()[0]
-            big_mat[:, col_no] = min_max_scaler.fit_transform(vec)
 
         fig = plt.figure()
         bbox_extra_artists = []

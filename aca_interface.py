@@ -41,6 +41,7 @@ if __name__ == "__main__":
     anomaly_group_by_state = load_anomaly_data.run(
         config.anomaly_data_path,
         config.interested_data_fields,
+        config.data_preprocessing_config,
     )
     if options.cluster:
         if config.cluster_algorithm['name'] == 'kmeans':

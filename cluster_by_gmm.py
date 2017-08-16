@@ -1,7 +1,7 @@
 import numpy as np
 import ipdb
 import matplotlib.pyplot as plt
-from sklearn import preprocessing, mixture
+from sklearn import mixture
 import ipdb
 from matplotlib.pyplot import cm 
 import matplotlib.mlab as mlab
@@ -37,9 +37,7 @@ def project_to_gaussian_basis_space(mat):
 
     
     ax_before = fig.add_subplot(312)
-    ax_before.set_ylim((-1, 1))
     ax_after = fig.add_subplot(313)
-    ax_after.set_ylim((-1, 1))
     projected_mat = np.zeros([num_basis, dim_amount])
     for col_no in range(dim_amount):
         ax_before.plot(
@@ -64,26 +62,16 @@ def run(
     interested_data_fields,
 ):
 
-    min_max_scaler = preprocessing.MinMaxScaler(feature_range=(-1, 1))
 
     for state_no in anomaly_group_by_state:
 
         lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
 
-
-
-        for col_no in range(big_mat.shape[1]):
-            vec = big_mat[:, col_no].reshape(-1, 1)
-            big_mat[:, col_no] = min_max_scaler.fit_transform(vec).reshape(1, -1)
-
-
         fig = plt.figure()
         bbox_extra_artists = []
         ax_raw_data = fig.add_subplot(311)
-        ax_raw_data.set_ylim((-1, 1))
         ax_approximated_data = fig.add_subplot(312)
-        ax_approximated_data.set_ylim((-1, 1))
 
 
         dim_color = {}

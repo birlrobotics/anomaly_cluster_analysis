@@ -1,8 +1,33 @@
 import os
 import pandas as pd
 import ipdb
+import util
+from sklearn import preprocessing 
+import numpy as np
 
-def run(anomaly_data_folder_path, interested_data_fields):
+def preprocess_loaded_data(anomaly_group_by_state, data_preprocessing_config):
+    if 'global_scaler' in data_preprocessing_config \
+        and data_preprocessing_config['global_scaler']['turn_on']:
+        feature_range = data_preprocessing_config['global_scaler']['parameters']['feature_range']
+        min_max_scaler = preprocessing.MinMaxScaler(feature_range=feature_range)
+
+        for state_no in anomaly_group_by_state:
+            lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
+            big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
+            for col_no in range(big_mat.shape[1]):
+                vec = big_mat[:, col_no].reshape(-1, 1)
+                big_mat[:, col_no] = min_max_scaler.fit_transform(vec).reshape(1, -1)
+            for idx, i, j in util.iter_from_X_lengths(big_mat, lengths):
+                mat = big_mat[i:j]
+                anomaly_group_by_state[state_no]['list_of_mat'][idx] = mat
+
+    return anomaly_group_by_state 
+
+def run(
+    anomaly_data_folder_path, 
+    interested_data_fields,
+    data_preprocessing_config,
+):
     list_of_anomaly = []
 
     import re
@@ -51,4 +76,5 @@ def run(anomaly_data_folder_path, interested_data_fields):
                 anomaly_group_by_state[state_no]['list_of_mat'].append(i['data_matrix'])
                 anomaly_group_by_state[state_no]['mat_owners'].append(i['anomaly_id'])
 
+    anomaly_group_by_state = preprocess_loaded_data(anomaly_group_by_state, data_preprocessing_config)
     return anomaly_group_by_state
