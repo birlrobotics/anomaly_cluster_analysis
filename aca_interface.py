@@ -49,6 +49,8 @@ if __name__ == "__main__":
             cluster_by_kmeans.run(
                 anomaly_group_by_state,
                 config.interested_data_fields,
+                config.cluster_algorithm['parameters'],
+                config.figure_save_path,
             )
         elif config.cluster_algorithm['name'] == 'gmm':
             import cluster_by_gmm
