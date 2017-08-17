@@ -9,20 +9,13 @@ import matplotlib.mlab as mlab
 import util
 import os
 import json
+from textwrap import wrap
 
 
 def project_to_gaussian_basis_space(mat):
     num_basis=31
     sigma = 0.05 
     means = np.arange(0,num_basis)/(num_basis-1.0)
-
-
-    fig = plt.figure()
-    ax_basis = fig.add_subplot(311)
-    for i in range(num_basis):
-        mu = means[i]  
-        x = np.linspace(0, 1, 100)
-        ax_basis.plot(x, mlab.normpdf(x, mu, sigma))
 
     len_data = mat.shape[0]
     dim_amount = mat.shape[1]
@@ -39,25 +32,14 @@ def project_to_gaussian_basis_space(mat):
     )
 
     
-    ax_before = fig.add_subplot(312)
-    ax_after = fig.add_subplot(313)
     projected_mat = np.zeros([num_basis, dim_amount])
     for col_no in range(dim_amount):
-        ax_before.plot(
-            np.linspace(0, 1, len_data),     
-            mat[:, col_no].reshape(1, -1).tolist()[0],
-        )
         W = np.dot(np.linalg.inv(np.dot(Phi, Phi.T)), np.dot(Phi, mat[:, col_no]))
         approximated_y = np.dot(W, Phi)
-        ax_after.plot(
-            np.linspace(0, 1, len_data),     
-            approximated_y,
-        )
 
         mat[:, col_no] = approximated_y
         projected_mat[:, col_no] = W
 
-    plt.close(fig)
     return mat, projected_mat 
 
 def run(
@@ -65,6 +47,7 @@ def run(
     interested_data_fields,
     algorithm_parameters,
     result_save_path,
+    result_id,
 ):
 
 
@@ -75,6 +58,7 @@ def run(
 
 
         fig = plt.figure()
+        fig.suptitle(result_save_path)
         bbox_extra_artists = []
         ax_raw_data = fig.add_subplot(311)
         ax_approximated_data = fig.add_subplot(312)
@@ -145,18 +129,22 @@ def run(
                                       covariance_type='full').fit(X)
 
             cluster_labels = gmm.predict(X).tolist() 
-            cluster_result[n_clusters] = cluster_labels
-
             metric_silhouette = silhouette_samples(X, cluster_labels)
             silhouette_x.append(n_clusters)
             silhouette_y.append(metric_silhouette)
+
+
+            cluster_result[n_clusters] = {}
+            cluster_result[n_clusters]['silhouette_score'] = metric_silhouette.mean() 
+            cluster_result[n_clusters]['labels'] = cluster_labels
+
 
         ax_silhouette = fig.add_subplot(313)
         ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)
 
         silhouette_mean = [np.array(i).mean() for i in silhouette_y]
         ax_silhouette.plot(silhouette_x, silhouette_mean, 'rs')
-        ax_silhouette.set_title("state %s gmm silhouette score"%(state_no,))
+        ax_silhouette.set_title("\n".join(wrap("state %s result_id(\"%s\") silhouette score"%(state_no, result_id))))
         ax_silhouette.set_xlabel('number of clusters')
 
         output_path = os.path.join(result_save_path, 'state_%s'%state_no)

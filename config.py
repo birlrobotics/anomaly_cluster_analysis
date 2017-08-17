@@ -23,20 +23,20 @@ cluster_algorithm_options = [
 
 config_by_user = {
     'data_type_chosen': data_type_options[1:],
+    'cluster_algorithm': cluster_algorithm_options[0], 
     'data_preprocessing_config': {
         'global_scaler': {
-            'turn_on': False,
+            'turn_on': True,
             'parameters': {
                 'feature_range': [-1, 1],
             },
         },
         'pca': {
-            'turn_on': False,
+            'turn_on': True,
             'parameters': {
             },
         },
     },
-    'cluster_algorithm': cluster_algorithm_options[0], 
     'data_folder_path': '/home/vmrguser/Files_from_Shuangqi_to_Workstation/birl/data_for_or_from_HMM/ML_DATA_Shuangqi/REAL_BAXTER_PICK_N_PLACE_with_5_states_20170711',
 }
 
@@ -57,5 +57,9 @@ result_save_path = os.path.join(
     'algorithm_'+config_by_user['cluster_algorithm']['name'],
     'config_'+'processing_config_'+str(config_by_user['data_preprocessing_config']),
 )
+tmp_str = str(result_save_path)
+import re
+tmp_idx = re.search(r'anomaly_cluster_analysis', tmp_str).start()
+result_id = tmp_str[tmp_idx+len('anomaly_cluster_analysis'):]
 
 exec '\n'.join("%s=%r"%i for i in config_by_user.items())

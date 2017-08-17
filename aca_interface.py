@@ -7,6 +7,7 @@ def inform_config(config):
     config_to_print = [
         'config.config_by_user',
         'config.interested_data_fields',
+        'config.result_id',
     ]
     
     for s in config_to_print:
@@ -51,6 +52,7 @@ if __name__ == "__main__":
                 config.interested_data_fields,
                 config.cluster_algorithm['parameters'],
                 config.result_save_path,
+                config.result_id,
             )
         elif config.cluster_algorithm['name'] == 'gmm':
             import cluster_by_gmm
@@ -59,4 +61,5 @@ if __name__ == "__main__":
                 config.interested_data_fields,
                 config.cluster_algorithm['parameters'],
                 config.result_save_path,
+                config.result_id,
             )

@@ -9,12 +9,14 @@ import util
 from sklearn.decomposition import PCA
 import os
 import json
+from textwrap import wrap
 
 def run(
     anomaly_group_by_state,
     interested_data_fields,
     algorithm_parameters,
     result_save_path,
+    result_id,
 ):
 
     anomaly_group_by_state = util.make_state_data_same_length(anomaly_group_by_state)
@@ -25,6 +27,7 @@ def run(
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
 
         fig = plt.figure()
+
         bbox_extra_artists = []
         ax_raw_data = fig.add_subplot(211)
 
@@ -70,18 +73,23 @@ def run(
                 n_jobs=-2).fit(X)
 
             cluster_labels = kmeans.labels_.tolist()
-            cluster_result[n_clusters] = cluster_labels
-
             metric_silhouette = silhouette_samples(X, cluster_labels)
             silhouette_x.append(n_clusters)
             silhouette_y.append(metric_silhouette)
+
+
+            cluster_result[n_clusters] = {}
+            cluster_result[n_clusters]['silhouette_score'] = metric_silhouette.mean() 
+            cluster_result[n_clusters]['labels'] = cluster_labels
+
+
 
         ax_silhouette = fig.add_subplot(212)
         ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)
 
         silhouette_mean = [np.array(i).mean() for i in silhouette_y]
         ax_silhouette.plot(silhouette_x, silhouette_mean, 'rs')
-        ax_silhouette.set_title("state %s kmeans silhouette score"%(state_no,))
+        ax_silhouette.set_title("\n".join(wrap("state %s result_id(\"%s\") silhouette score"%(state_no, result_id))))
         ax_silhouette.set_xlabel('number of clusters')
 
         output_path = os.path.join(result_save_path, 'state_%s'%state_no)
