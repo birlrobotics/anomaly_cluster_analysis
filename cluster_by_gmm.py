@@ -52,13 +52,11 @@ def run(
 
 
     for state_no in anomaly_group_by_state:
-
         lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
 
 
         fig = plt.figure()
-        fig.suptitle(result_save_path)
         bbox_extra_artists = []
         ax_raw_data = fig.add_subplot(311)
         ax_approximated_data = fig.add_subplot(312)
@@ -133,11 +131,9 @@ def run(
             silhouette_x.append(n_clusters)
             silhouette_y.append(metric_silhouette)
 
-
             cluster_result[n_clusters] = {}
             cluster_result[n_clusters]['silhouette_score'] = metric_silhouette.mean() 
             cluster_result[n_clusters]['labels'] = cluster_labels
-
 
         ax_silhouette = fig.add_subplot(313)
         ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)

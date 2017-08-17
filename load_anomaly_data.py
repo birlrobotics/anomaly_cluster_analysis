@@ -5,6 +5,7 @@ import util
 from sklearn import preprocessing 
 import numpy as np
 from sklearn.decomposition import PCA
+import ipdb
 
 def preprocess_loaded_data(anomaly_group_by_state, data_preprocessing_config):
     if 'global_scaler' in data_preprocessing_config \
@@ -49,22 +50,21 @@ def run(
     import re
     prog = re.compile('extracted_anomaly_(\d+).csv')
     
-    for f_1 in os.listdir(anomaly_data_folder_path):
-        path_1 = os.path.join(anomaly_data_folder_path, f_1)
-        if not os.path.isdir(path_1):
+    for trial_name in os.listdir(anomaly_data_folder_path):
+        trial_path = os.path.join(anomaly_data_folder_path, trial_name)
+        if not os.path.isdir(trial_path):
             continue
-        for f_2 in os.listdir(path_1):
-            m = prog.match(f_2)
+        for anomaly_csv in os.listdir(trial_path):
+            m = prog.match(anomaly_csv)
             if not m:
                 continue
-            path_2 = os.path.join(path_1, f_2)
+            anomlay_csv_path = os.path.join(trial_path, anomaly_csv)
     
-            trial_name = f_1
             anomaly_no = m.group(1)
 
             anomaly_id = "trial_(%s)_anomaly_(%s)"%(trial_name, anomaly_no)
-            anomaly_df = pd.read_csv(path_2, sep=',')
-            anomaly_df = anomaly_df[interested_data_fields].loc[anomaly_df['.tag'] != 0]
+            raw_anomaly_df = pd.read_csv(anomlay_csv_path , sep=',')
+            anomaly_df = raw_anomaly_df[interested_data_fields].loc[raw_anomaly_df['.tag'] != 0]
             states_in_df = anomaly_df['.tag'].unique().tolist()
             if len(states_in_df) != 1:
                 print("%s is not of only one state: %s"%(anomaly_id, states_in_df)) 
@@ -78,19 +78,22 @@ def run(
                 'anomaly_id': anomaly_id,
                 'state_no': state,
                 'data_matrix': mat,
+                'raw_anomaly_df': raw_anomaly_df,
             }) 
 
-            anomaly_group_by_state = {}
-            for i in list_of_anomaly:
-                state_no = i['state_no']
-                if state_no not in anomaly_group_by_state:
-                    anomaly_group_by_state[state_no] = {
-                        'list_of_mat':[],
-                        'mat_owners':[],
-                    }
-                    
-                anomaly_group_by_state[state_no]['list_of_mat'].append(i['data_matrix'])
-                anomaly_group_by_state[state_no]['mat_owners'].append(i['anomaly_id'])
+    anomaly_group_by_state = {}
+    for i in list_of_anomaly:
+        state_no = i['state_no']
+        if state_no not in anomaly_group_by_state:
+            anomaly_group_by_state[state_no] = {
+                'list_of_mat':[],
+                'list_of_raw_df':[],
+                'mat_owners':[],
+            }
+            
+        anomaly_group_by_state[state_no]['list_of_raw_df'].append(i['raw_anomaly_df'])
+        anomaly_group_by_state[state_no]['list_of_mat'].append(i['data_matrix'])
+        anomaly_group_by_state[state_no]['mat_owners'].append(i['anomaly_id'])
 
     anomaly_group_by_state = preprocess_loaded_data(anomaly_group_by_state, data_preprocessing_config)
 
