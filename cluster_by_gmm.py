@@ -3,9 +3,12 @@ import ipdb
 import matplotlib.pyplot as plt
 from sklearn import mixture
 import ipdb
+from sklearn.metrics import silhouette_score, calinski_harabaz_score, silhouette_samples
 from matplotlib.pyplot import cm 
 import matplotlib.mlab as mlab
 import util
+import os
+import json
 
 
 def project_to_gaussian_basis_space(mat):
@@ -60,6 +63,8 @@ def project_to_gaussian_basis_space(mat):
 def run(
     anomaly_group_by_state,
     interested_data_fields,
+    algorithm_parameters,
+    result_save_path,
 ):
 
 
@@ -67,6 +72,7 @@ def run(
 
         lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
+
 
         fig = plt.figure()
         bbox_extra_artists = []
@@ -115,26 +121,55 @@ def run(
             ax_approximated_data.axvline(x=i, color='gray')
 
             X.append(projected_mat.flatten().tolist())
+        ax_raw_data.set_xticklabels([])
+        ax_raw_data.set_title("state %s data, anomalies are seperated by gray vertical lines"%(state_no,))
+        ax_raw_data.set_xlabel('anomalies seperated by gray vertival lines')
         lgd = ax_raw_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
         bbox_extra_artists.append(lgd)
-        lgd = ax_approximated_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
+
+        ax_approximated_data.set_title("state %s data approximated by n gaussian basis functions, anomalies are seperated by gray vertical lines"%(state_no,))
+        ax_approximated_data.set_xlabel('anomalies seperated by gray vertival lines')
+        ax_approximated_data.set_xticklabels([])
         bbox_extra_artists.append(lgd)
 
+        cluster_result = {}
 
-        bic_x = []
-        bic_y = []
+        silhouette_x = []
+        silhouette_y = []
 
         X = np.matrix(X)
         sample_amount = X.shape[0]
-        for n_components in range(1, sample_amount+1):
-            gmm = mixture.GaussianMixture(n_components=n_components,
+        for n_clusters in range(2, sample_amount):
+            print "n_clusters:", n_clusters
+            gmm = mixture.GaussianMixture(n_components=n_clusters,
                                       covariance_type='full').fit(X)
-            bic_x.append(n_components)
-            bic_y.append(gmm.bic(X))
 
-        ax_bic = fig.add_subplot(313)
-        ax_bic.bar(bic_x, bic_y)
-        ax_bic.set_title("state %s"%(state_no,))
+            cluster_labels = gmm.predict(X).tolist() 
+            cluster_result[n_clusters] = cluster_labels
 
-    plt.show()
+            metric_silhouette = silhouette_samples(X, cluster_labels)
+            silhouette_x.append(n_clusters)
+            silhouette_y.append(metric_silhouette)
 
+        ax_silhouette = fig.add_subplot(313)
+        ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)
+
+        silhouette_mean = [np.array(i).mean() for i in silhouette_y]
+        ax_silhouette.plot(silhouette_x, silhouette_mean, 'rs')
+        ax_silhouette.set_title("state %s gmm silhouette score"%(state_no,))
+        ax_silhouette.set_xlabel('number of clusters')
+
+        output_path = os.path.join(result_save_path, 'state_%s'%state_no)
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+
+        subplot_amount = len(fig.get_axes())
+        fig.set_size_inches(8,8*subplot_amount)
+        fig.savefig(os.path.join(output_path, "state_%s_clustering_results.png"%state_no), format="png", bbox_extra_artists=bbox_extra_artists, bbox_inches='tight')
+    
+
+        json.dump(
+            cluster_result,
+            open(os.path.join(output_path, 'cluster_result.json'), 'w'),
+            indent=4,
+        )

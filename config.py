@@ -22,16 +22,16 @@ cluster_algorithm_options = [
 ]
 
 config_by_user = {
-    'data_type_chosen': data_type_options[:],
+    'data_type_chosen': data_type_options[1:],
     'data_preprocessing_config': {
         'global_scaler': {
-            'turn_on': True,
+            'turn_on': False,
             'parameters': {
                 'feature_range': [-1, 1],
             },
         },
         'pca': {
-            'turn_on': True,
+            'turn_on': False,
             'parameters': {
             },
         },
@@ -50,9 +50,8 @@ for data_type in config_by_user['data_type_chosen']:
 interested_data_fields.append('.tag')
 
 anomaly_data_path = os.path.join(config_by_user['data_folder_path'], "has_anomaly")
-figure_save_path = os.path.join(
+result_save_path = os.path.join(
     config_by_user['data_folder_path'], 
-    "figure", 
     "anomaly_cluster_analysis", 
     'datatype_'+str(config_by_user['data_type_chosen']), 
     'algorithm_'+config_by_user['cluster_algorithm']['name'],

@@ -47,7 +47,7 @@ def run(
     list_of_anomaly = []
 
     import re
-    prog = re.compile('extracted_error_(\d+).csv')
+    prog = re.compile('extracted_anomaly_(\d+).csv')
     
     for f_1 in os.listdir(anomaly_data_folder_path):
         path_1 = os.path.join(anomaly_data_folder_path, f_1)

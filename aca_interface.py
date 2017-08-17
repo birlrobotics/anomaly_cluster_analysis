@@ -50,11 +50,13 @@ if __name__ == "__main__":
                 anomaly_group_by_state,
                 config.interested_data_fields,
                 config.cluster_algorithm['parameters'],
-                config.figure_save_path,
+                config.result_save_path,
             )
         elif config.cluster_algorithm['name'] == 'gmm':
             import cluster_by_gmm
             cluster_by_gmm.run(
                 anomaly_group_by_state,
                 config.interested_data_fields,
+                config.cluster_algorithm['parameters'],
+                config.result_save_path,
             )

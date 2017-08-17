@@ -8,17 +8,14 @@ from matplotlib.pyplot import cm
 import util
 from sklearn.decomposition import PCA
 import os
+import json
 
 def run(
     anomaly_group_by_state,
     interested_data_fields,
     algorithm_parameters,
-    figure_save_path,
+    result_save_path,
 ):
-
-    if not os.path.isdir(figure_save_path):
-        os.makedirs(figure_save_path)
-
 
     anomaly_group_by_state = util.make_state_data_same_length(anomaly_group_by_state)
 
@@ -58,19 +55,24 @@ def run(
 
         lgd = ax_raw_data.legend(loc='center left', bbox_to_anchor=(1,0.5))
         bbox_extra_artists.append(lgd)
-        ax_raw_data.set_title("state %s data, trials are seperated by gray vertical lines"%(state_no,))
-        ax_raw_data.set_xlabel('trails seperated by gray vertival lines')
+        ax_raw_data.set_title("state %s data, anomalies are seperated by gray vertical lines"%(state_no,))
+        ax_raw_data.set_xlabel('anomalies seperated by gray vertival lines')
         ax_raw_data.set_xticklabels([])
+
+        cluster_result = {}
 
         silhouette_x = []
         silhouette_y = []
         for n_clusters in range(2, X.shape[0]):
-            print X.shape
+            print "n_clusters:", n_clusters
             kmeans = KMeans(
                 n_clusters=n_clusters, 
                 n_jobs=-2).fit(X)
 
-            metric_silhouette = silhouette_samples(X, kmeans.labels_)
+            cluster_labels = kmeans.labels_.tolist()
+            cluster_result[n_clusters] = cluster_labels
+
+            metric_silhouette = silhouette_samples(X, cluster_labels)
             silhouette_x.append(n_clusters)
             silhouette_y.append(metric_silhouette)
 
@@ -79,8 +81,19 @@ def run(
 
         silhouette_mean = [np.array(i).mean() for i in silhouette_y]
         ax_silhouette.plot(silhouette_x, silhouette_mean, 'rs')
-
         ax_silhouette.set_title("state %s kmeans silhouette score"%(state_no,))
         ax_silhouette.set_xlabel('number of clusters')
 
-        fig.savefig(os.path.join(figure_save_path, "state_%s_clustering_results.png"%state_no), format="png", bbox_extra_artists=bbox_extra_artists, bbox_inches='tight', dpi=900)
+        output_path = os.path.join(result_save_path, 'state_%s'%state_no)
+        if not os.path.isdir(output_path):
+            os.makedirs(output_path)
+
+        subplot_amount = len(fig.get_axes())
+        fig.set_size_inches(8,8*subplot_amount)
+        fig.savefig(os.path.join(output_path, "state_%s_clustering_results.png"%state_no), format="png", bbox_extra_artists=bbox_extra_artists, bbox_inches='tight')
+
+        json.dump(
+            cluster_result,
+            open(os.path.join(output_path, 'cluster_result.json'), 'w'),
+            indent=4,
+        )
