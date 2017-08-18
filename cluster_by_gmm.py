@@ -50,8 +50,9 @@ def run(
     result_id,
 ):
 
-
+    print 'cluster_by_gmm'
     for state_no in anomaly_group_by_state:
+        print 'processing state', state_no
         lengths = [i.shape[0] for i in anomaly_group_by_state[state_no]['list_of_mat']]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
 
@@ -121,8 +122,9 @@ def run(
 
         X = np.matrix(X)
         sample_amount = X.shape[0]
+        print "n_clusters:", 
         for n_clusters in range(2, sample_amount):
-            print "n_clusters:", n_clusters
+            print n_clusters, 
             gmm = mixture.GaussianMixture(n_components=n_clusters,
                                       covariance_type='full').fit(X)
 
@@ -134,6 +136,7 @@ def run(
             cluster_result[n_clusters] = {}
             cluster_result[n_clusters]['silhouette_score'] = metric_silhouette.mean() 
             cluster_result[n_clusters]['labels'] = cluster_labels
+        print 'Done'
 
         ax_silhouette = fig.add_subplot(313)
         ax_silhouette.boxplot(silhouette_y, positions=silhouette_x)

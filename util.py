@@ -23,3 +23,13 @@ def iter_from_X_lengths(X, lengths):
 
         for i in range(len(lengths)):
             yield i, start[i], end[i]
+
+def powerset_without_empty_set(iterable):
+    from itertools import chain, combinations
+    "powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)"
+    s = list(iterable)
+   
+    result = [] 
+    for i in chain.from_iterable(combinations(s, r) for r in range(1, len(s)+1)):
+        result.append(list(i))
+    return result

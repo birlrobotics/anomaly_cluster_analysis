@@ -21,7 +21,9 @@ def run(
 
     anomaly_group_by_state = util.make_state_data_same_length(anomaly_group_by_state)
 
+    print 'cluster_by_kmeans'
     for state_no in anomaly_group_by_state:
+        print 'processing state', state_no
 
         sample_length = anomaly_group_by_state[state_no]['list_of_mat'][0].shape[0]
         big_mat = np.vstack(anomaly_group_by_state[state_no]['list_of_mat'])
@@ -66,8 +68,9 @@ def run(
 
         silhouette_x = []
         silhouette_y = []
+        print "n_clusters:", 
         for n_clusters in range(2, X.shape[0]):
-            print "n_clusters:", n_clusters
+            print n_clusters, 
             kmeans = KMeans(
                 n_clusters=n_clusters, 
                 n_jobs=-2).fit(X)
@@ -81,6 +84,7 @@ def run(
             cluster_result[n_clusters] = {}
             cluster_result[n_clusters]['silhouette_score'] = metric_silhouette.mean() 
             cluster_result[n_clusters]['labels'] = cluster_labels
+        print 'Done'
 
 
 
